@@ -7,7 +7,8 @@ module Categories.Arrow {o ℓ e} (C : Category o ℓ e) where
 
 open import Level
 open import Relation.Binary using (Rel)
-open import Data.Product using (_×_; _,_; map; zip)
+open import Data.Product using (_×_; _,_; map; zip; proj₁; proj₂)
+open import Function using () renaming (_∘_ to _∙_)
 
 open Category C
 open Category.Equiv C
@@ -29,7 +30,7 @@ record Arrow⇒ (X Y : ArrowObj) : Set (ℓ ⊔ e) where
     .square : CommutativeSquare X.arr f g Y.arr
 
 arrow : Category _ _ _
-arrow = record 
+arrow = record
   { Obj = Obj′
   ; _⇒_ = _⇒′_
   ; _≡_ = _≡′_
@@ -38,7 +39,7 @@ arrow = record
   ; assoc = λ {_} {_} {_} {_} {f} {g} {h} → assoc′ {f = f} {g} {h}
   ; identityˡ = identityˡ , identityˡ
   ; identityʳ = identityʳ , identityʳ
-  ; equiv = record 
+  ; equiv = record
     { refl = refl , refl
     ; sym = map sym sym
     ; trans = zip trans trans
@@ -74,7 +75,7 @@ arrow = record
          ↓⟨ assoc ⟩
            z ∘ (f ∘ i)
          ∎
-      where 
+      where
       open HomReasoning
 
   id′ : ∀ {A} → A ⇒′ A
@@ -161,3 +162,33 @@ module Congruent {q} (Q : Congruence C q) where
     }
 
 open Congruent (TrivialCongruence C) public using () renaming (arrowQ to arrow∼)
+
+open import Categories.Functor using (Functor)
+
+i : Functor C arrow
+i = record {
+      F₀ = λ z → arrobj id;
+      F₁ = λ f → arrarr id-comm;
+      identity = refl , refl;
+      homomorphism = refl , refl;
+      F-resp-≡ = λ eq → eq , eq }
+
+dom : Functor arrow C
+dom = record {
+      F₀ = ArrowObj.A;
+      F₁ = Arrow⇒.f;
+      identity = refl;
+      homomorphism = refl;
+      F-resp-≡ = proj₁ }
+
+cod : Functor arrow C
+cod = record {
+      F₀ = ArrowObj.B;
+      F₁ = Arrow⇒.g;
+      identity = refl;
+      homomorphism = refl;
+      F-resp-≡ = proj₂ }
+
+open import Categories.NaturalTransformation
+η : NaturalTransformation dom cod
+η = record { η = ArrowObj.arr; commute = sym ∙ Arrow⇒.square {-λ x → sym (Arrow⇒.square x)-} }
